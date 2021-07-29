@@ -5,10 +5,33 @@ class App extends React.Component {
 
         this.state={
             tasks: ["hello","just"],
-            input: ""
+            times: ["20","21"],
+            input: "",
+            button:"Add Task",
+            updateid:0,
+            input_time:"00:00"
         }
 
         this.handler = this.handler.bind(this)
+        this.updateHandler=this.updateHandler.bind(this)
+        this.updateTime=this.updateTime.bind(this)
+        
+    }
+
+    componentDidMount() {  
+
+        var prev=localStorage.getItem("todolist")
+        console.log("mount")
+
+        if(prev!=null){
+
+            this.state=JSON.parse(prev)
+        }
+    }
+
+    componentDidUpdate(){
+
+        localStorage.setItem("todolist",JSON.stringify(this.state))
     }
 
     render() {
@@ -17,11 +40,12 @@ class App extends React.Component {
               <h1>To do List</h1>
               <h2>Task Count: {this.state.tasks.length}</h2>
               <div className="row"><div className="col"><h3>Task Name</h3></div><div className="col"><h3>Action</h3></div></div>
-              <TaskList tasks={this.state.tasks} hand={this.handler}/>
+              <TaskList tasks={this.state.tasks} times={this.state.times} hand={this.handler} update={this.updateHandler} upTimes={this.updateTime}/>
 
               <div>
                   <input onChange={this.handleChange} value={this.state.input} />
-                  <button onClick={this.addTask}>Add Task</button>
+                  <button onClick={this.addTask}>{this.state.button}</button>
+                  <input type="number" value={this.state.input_time} onChange={this.handleChangeTime}></input>
               </div>
             
           </div>
@@ -34,12 +58,37 @@ class App extends React.Component {
         })
     }
 
-    addTask=() => {
+    handleChangeTime=(event) =>{
         this.setState({
-
-            tasks:[...this.state.tasks, this.state.input],
-            input:""
+            input_time:event.target.value
         })
+    }
+
+    addTask=() => {
+        var butState=this.state.button
+        if(butState==="Add Task"){
+            this.setState({
+
+                tasks:[...this.state.tasks, this.state.input],
+                times:[...this.state.times,this.state.input_time],
+                input:"",
+                input_time:""
+            })
+        }
+        else{
+
+            var currtasks =[...this.state.tasks]
+            currtasks[this.state.updateid]=this.state.input
+            var currtimes=[...this.state.times]
+            currtimes[this.state.updateid]=this.state.input_time
+            this.setState({
+                tasks: currtasks,
+                times: currtimes,
+                input:"",
+                input_time:"",
+                button:"Add Task"
+            })
+        }
     }
 
     handler(id){
@@ -47,10 +96,45 @@ class App extends React.Component {
         //console.log("par:"+id)
         var newtasks=[...this.state.tasks]
         newtasks.splice(id,1)
+        var newtimes=[...this.state.times]
+        newtimes.splice(id,1)
         this.setState({
 
-            tasks:newtasks
+            tasks:newtasks,
+            times:newtimes,
+            button: "Add Task",
+            input: ""
+            
         })
+
+
+    }
+
+    updateHandler(id){
+
+        var currTask=this.state.tasks[id]
+        var currTime=this.state.times[id]
+
+        this.setState({
+            input: currTask,
+            input_time: currTime,
+            button: "Update Task",
+            updateid: id
+            
+        })
+
+
+    }
+
+    updateTime(id,time){
+        var currTime=[...this.state.times]
+        currTime[id]=time
+
+        this.setState({
+
+            times:currTime
+        })
+
     }
   }
 
@@ -61,9 +145,14 @@ class App extends React.Component {
     render(){
 
         var tasks=this.props.tasks
-
-        var listItems = tasks.map((tas,i) =>
-            <li key={i}><Task task={tas} id={i} hand={this.props.hand} /></li>
+        var times=this.props.times
+        var taskArr=[]
+        for(var i=0;i<times.length;i++){
+            taskArr.push([tasks[i],times[i]])
+        }
+        //console.log(this.props.times)
+        var listItems = taskArr.map((tas,i) =>
+            <li key={i}><Task task={tas} id={i} time={times[i]} hand={this.props.hand} update={this.props.update} upTimes={this.props.upTimes} /></li>
             
             );
         var combList=``
@@ -77,12 +166,20 @@ class App extends React.Component {
 
   class Task extends React.Component {
 
+    constructor(props){
+        super(props)
+        this.delete = this.delete.bind(this)
+
+    }
+
     render(){
-        //console.log("hello")
+        //console.log(this.props.task)
         return (
         <div className="row">
-            <div className="col"><p>{this.props.task}</p></div>
+            <div className="col"><p>{this.props.task[0]}</p></div>
             <div className="col"><button onClick={this.delete}>Delete Task</button></div>
+            <div className="col"><button onClick={this.update}>Update Task</button></div>
+            <div className="col"><Clock id={this.props.id} upTimes={this.props.upTimes} task={this.props.task[0]} time={this.props.task[1]} del={this.delete}/></div>
         </div>
         )
 
@@ -92,5 +189,92 @@ class App extends React.Component {
            //console.log(this.props.id)
            this.props.hand(this.props.id) 
     }
+
+    update=()=>{
+        //console.log(this.props.id)
+        this.props.update(this.props.id) 
+ }
+
+
   }
+
+
+  class Clock extends React.Component {
+    constructor(props) {
+      super(props);
+      this.state = {time: this.props.time};
+      this.upCheck=this.props.time
+    }
+  
+    componentDidMount() {
+      this.timerID = setInterval(
+        () => this.tick(),
+        1000
+      );
+    }
+
+    componentDidUpdate(){
+        
+        if(this.state.time===0){
+
+            this.timeOver()
+            this.setState({
+                time: "Over"
+                
+            });
+            
+        }
+
+    }
+  
+    componentWillUnmount() {
+      clearInterval(this.timerID);
+    }
+  
+    tick() {
+        if(this.props.time!=this.upCheck){
+            
+            this.upCheck=this.props.time
+            this.setState({
+                time:this.props.time
+            })
+
+        
+        }
+        var curr=this.state.time
+        if(curr>=0){
+            this.setState({
+                time: curr-1
+                
+            });
+        
+        }
+
+        //var up=this.props.upTimes
+
+        //up(this.props.id,this.state.time)
+        
+
+    }
+
+    timeOver() {
+        
+        if (confirm("Task: "+this.props.task+"\nTIme Over\nPress OK to delete")) {
+          this.props.del()
+        } else {
+          
+        }
+    }
+  
+    render() {
+      return (
+        <div>
+        
+          <h2>{this.state.time}</h2>
+          
+        </div>
+      );
+    }
+  }
+  
   ReactDOM.render(<App/>,document.querySelector("#list"))
