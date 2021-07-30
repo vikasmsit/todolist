@@ -4,8 +4,8 @@ class App extends React.Component {
         super(props)
 
         this.state={
-            tasks: ["hello","just"],
-            times: ["20","21"],
+            tasks: [],
+            times: [],
             input: "",
             button:"Add Task",
             updateid:0,
@@ -25,7 +25,12 @@ class App extends React.Component {
 
         if(prev!=null){
 
-            this.state=JSON.parse(prev)
+            this.setState(JSON.parse(prev))
+        }
+
+        else{
+
+            
         }
     }
 
@@ -39,12 +44,12 @@ class App extends React.Component {
           <div>
               <h1>To do List</h1>
               <h2>Task Count: {this.state.tasks.length}</h2>
-              <div className="row"><div className="col"><h3>Task Name</h3></div><div className="col"><h3>Action</h3></div></div>
+              <div className="row"><div className="col"><h3>Task Name</h3></div><div className="col"><h3>Action and Time Remaining</h3></div></div>
               <TaskList tasks={this.state.tasks} times={this.state.times} hand={this.handler} update={this.updateHandler} upTimes={this.updateTime}/>
 
               <div>
                   <input onChange={this.handleChange} value={this.state.input} />
-                  <button onClick={this.addTask}>{this.state.button}</button>
+                  <button onClick={this.addTask}>{this.state.button} and Time</button>
                   <input type="number" value={this.state.input_time} onChange={this.handleChangeTime}></input>
               </div>
             
@@ -98,6 +103,7 @@ class App extends React.Component {
         newtasks.splice(id,1)
         var newtimes=[...this.state.times]
         newtimes.splice(id,1)
+        console.log(newtimes)
         this.setState({
 
             tasks:newtasks,
@@ -147,7 +153,7 @@ class App extends React.Component {
         var tasks=this.props.tasks
         var times=this.props.times
         var taskArr=[]
-        for(var i=0;i<times.length;i++){
+        for(var i=0;i<tasks.length;i++){
             taskArr.push([tasks[i],times[i]])
         }
         //console.log(this.props.times)
@@ -179,7 +185,7 @@ class App extends React.Component {
             <div className="col"><p>{this.props.task[0]}</p></div>
             <div className="col"><button onClick={this.delete}>Delete Task</button></div>
             <div className="col"><button onClick={this.update}>Update Task</button></div>
-            <div className="col"><Clock id={this.props.id} upTimes={this.props.upTimes} task={this.props.task[0]} time={this.props.task[1]} del={this.delete}/></div>
+            <div className="col"><Clock id={this.props.id} upTimes={this.props.upTimes} task={this.props.task[0]} time={this.props.time} del={this.props.hand}/></div>
         </div>
         )
 
@@ -218,10 +224,9 @@ class App extends React.Component {
         if(this.state.time===0){
 
             this.timeOver()
-            this.setState({
-                time: "Over"
-                
-            });
+
+            
+            
             
         }
 
@@ -250,18 +255,25 @@ class App extends React.Component {
         
         }
 
-        //var up=this.props.upTimes
+        var up=this.props.upTimes
 
-        //up(this.props.id,this.state.time)
+        up(this.props.id,this.state.time)
         
 
     }
 
     timeOver() {
+
+        
         
         if (confirm("Task: "+this.props.task+"\nTIme Over\nPress OK to delete")) {
-          this.props.del()
+          this.props.del(this.props.id)
         } else {
+
+            this.setState({
+                time: "Over"
+                
+            });
           
         }
     }
